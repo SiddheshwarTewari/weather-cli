@@ -14,7 +14,7 @@ templates = Jinja2Templates(directory="templates")
 @app.get("/weather")
 async def weather(city: str):
     url = f"{BASE_URL}?q={city}&appid={API_KEY}&units=metric"
-    response = requests.get(url)
+    response = Request.get(url)
     
     if response.status_code == 200:
         data = response.json()
