@@ -364,7 +364,7 @@
                 // Update UI
                 updateCurrentWeather(weatherData);
                 updateForecast(forecastData);
-                updateMap(weatherData, forecastData);
+                updateMap(weatherData.coord);  // Use coordinates from current weather
                 
                 // Hide loading spinner and show content
                 document.getElementById('loading').style.display = 'none';
@@ -414,18 +414,16 @@
         }
         
         // Update map with current location
-        function updateMap(weatherData, forecastData) {
-            // For simplicity, we'll just show the first forecast location
-            // In a real app, you'd get the coordinates from the weather API response
+        function updateMap(coord) {
             if (currentMarker) {
                 map.removeLayer(currentMarker);
             }
             
-            // Center map on the city (using first forecast location as approximation)
-            map.setView([forecastData.city.coord.lat, forecastData.city.coord.lon], 10);
+            // Center map on the city coordinates
+            map.setView([coord.lat, coord.lon], 10);
             
-            currentMarker = L.marker([forecastData.city.coord.lat, forecastData.city.coord.lon]).addTo(map)
-                .bindPopup(`<b>${weatherData.city}</b><br>${weatherData.temperature}°${currentUnit === 'metric' ? 'C' : 'F'}<br>${weatherData.description}`)
+            currentMarker = L.marker([coord.lat, coord.lon]).addTo(map)
+                .bindPopup(`<b>${document.getElementById('currentCity').textContent}</b>`)
                 .openPopup();
         }
         

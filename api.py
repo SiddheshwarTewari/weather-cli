@@ -26,7 +26,8 @@ async def weather(city: str, units: str = "metric"):
             "icon": data['weather'][0]['icon'],
             "humidity": data['main']['humidity'],
             "wind_speed": data['wind']['speed'],
-            "unit": units
+            "unit": units,
+            "coord": data['coord']  # Add coordinates for the map
         }
     return {"error": "City not found"}
 
@@ -54,7 +55,8 @@ async def forecast(city: str, units: str = "metric"):
             "city": data['city']['name'],
             "country": data['city']['country'],
             "forecasts": daily_forecasts,
-            "unit": units
+            "unit": units,
+            "coord": data['city']['coord']  # Add coordinates for the map
         }
     return {"error": "City not found"}
 
