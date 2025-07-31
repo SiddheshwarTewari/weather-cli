@@ -1,4 +1,5 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
+import requests
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -14,7 +15,7 @@ templates = Jinja2Templates(directory="templates")
 @app.get("/weather")
 async def weather(city: str):
     url = f"{BASE_URL}?q={city}&appid={API_KEY}&units=metric"
-    response = Request.get(url)
+    response = requests.get(url)
     
     if response.status_code == 200:
         data = response.json()
@@ -27,5 +28,5 @@ async def weather(city: str):
 
 # New route to serve the HTML page
 @app.get("/", response_class=HTMLResponse)
-async def read_root(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+async def read_root(request: requests):
+    return templates.TemplateResponse("index.html", {"request": requests})
