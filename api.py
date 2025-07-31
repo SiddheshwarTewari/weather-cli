@@ -1,12 +1,14 @@
-from fastapi import FastAPI
-import requests
+from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 
 app = FastAPI()
-API_KEY = "58a80029124e2e01724f48e80c7be2c0"
-BASE_URL = "https://api.openweathermap.org/data/2.5/weather"
+templates = Jinja2Templates(directory="templates")
 
+# Your existing weather endpoint
 @app.get("/weather")
-def get_weather(city: str):
+async def weather(city: str):
     url = f"{BASE_URL}?q={city}&appid={API_KEY}&units=metric"
     response = requests.get(url)
     
@@ -17,10 +19,9 @@ def get_weather(city: str):
             "temperature": data['main']['temp'],
             "description": data['weather'][0]['description']
         }
-    else:
-        return {"error": "City not found"}
+    return {"error": "City not found"}
 
-# For local testing
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+# New route to serve the HTML page
+@app.get("/", response_class=HTMLResponse)
+async def read_root(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})

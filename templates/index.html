@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Weather App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+        }
+        input, button {
+            padding: 10px;
+            font-size: 16px;
+            margin: 10px;
+        }
+        #weatherResult {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            background: #f0f8ff;
+        }
+        .weather-icon {
+            font-size: 2em;
+        }
+    </style>
+</head>
+<body>
+    <h1>🌤️ Weather Checker</h1>
+    <input type="text" id="cityInput" placeholder="Enter city name">
+    <button onclick="getWeather()">Get Weather</button>
+    <div id="weatherResult"></div>
+
+    <script>
+        async function getWeather() {
+            const city = document.getElementById('cityInput').value;
+            const response = await fetch(`/weather?city=${city}`);
+            const data = await response.json();
+
+            const resultDiv = document.getElementById('weatherResult');
+            if (data.error) {
+                resultDiv.innerHTML = `<p style="color: red;">❌ ${data.error}</p>`;
+            } else {
+                resultDiv.innerHTML = `
+                    <h2>${data.city}</h2>
+                    <div class="weather-icon">${getWeatherIcon(data.description)}</div>
+                    <p>Temperature: ${data.temperature}°C</p>
+                    <p>Conditions: ${data.description}</p>
+                `;
+            }
+        }
+
+        function getWeatherIcon(description) {
+            const icons = {
+                'clear': '☀️',
+                'cloud': '☁️',
+                'rain': '🌧️',
+                'thunderstorm': '⛈️',
+                'snow': '❄️',
+                'mist': '🌫️'
+            };
+            description = description.toLowerCase();
+            return icons[description] || '🌤️';
+        }
+    </script>
+</body>
+</html>
