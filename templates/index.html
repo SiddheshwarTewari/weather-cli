@@ -2,66 +2,485 @@
 <html>
 <head>
     <title>Weather App</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3f37c9;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --success: #4cc9f0;
+            --danger: #f72585;
+        }
+        
         body {
-            font-family: Arial, sans-serif;
-            max-width: 600px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            color: var(--dark);
+        }
+        
+        .container {
+            max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px 0;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            color: var(--primary);
+            margin: 0;
+            font-size: 2.5rem;
+        }
+        
+        .search-container {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        
+        input, button, select {
+            padding: 12px 15px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+        
+        input {
+            width: 300px;
+            border: 1px solid #ddd;
+        }
+        
+        input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.2);
+        }
+        
+        button {
+            background-color: var(--primary);
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        button:hover {
+            background-color: var(--secondary);
+            transform: translateY(-2px);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .unit-toggle {
+            background-color: white;
+            border: 1px solid #ddd;
+            color: var(--dark);
+        }
+        
+        .weather-display {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 30px;
+        }
+        
+        @media (max-width: 768px) {
+            .weather-display {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .current-weather, .forecast-container, .map-container {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .current-weather {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .weather-main {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .weather-icon {
+            font-size: 4rem;
+            margin-right: 20px;
+        }
+        
+        .weather-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            width: 100%;
+            margin-top: 20px;
+        }
+        
+        .detail-item {
+            background: rgba(67, 97, 238, 0.1);
+            padding: 10px;
+            border-radius: 5px;
             text-align: center;
         }
-        input, button {
-            padding: 10px;
-            font-size: 16px;
-            margin: 10px;
+        
+        .forecast-container h2, .map-container h2 {
+            margin-top: 0;
+            color: var(--primary);
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 10px;
         }
-        #weatherResult {
-            margin-top: 20px;
+        
+        .forecast-days {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .forecast-day {
+            background: rgba(67, 97, 238, 0.1);
             padding: 15px;
-            border-radius: 8px;
-            background: #f0f8ff;
+            border-radius: 5px;
+            text-align: center;
         }
-        .weather-icon {
-            font-size: 2em;
+        
+        .forecast-day h3 {
+            margin-top: 0;
+            color: var(--secondary);
+        }
+        
+        #map {
+            height: 400px;
+            width: 100%;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top: 4px solid var(--primary);
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error {
+            color: var(--danger);
+            text-align: center;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+        
+        .hidden {
+            display: none;
         }
     </style>
 </head>
 <body>
-    <h1>🌤️ Weather Checker</h1>
-    <input type="text" id="cityInput" placeholder="Enter city name">
-    <button onclick="getWeather()">Get Weather</button>
-    <div id="weatherResult"></div>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-cloud-sun"></i> Weather Forecast</h1>
+            <div class="search-container">
+                <input type="text" id="cityInput" placeholder="Enter city name">
+                <button onclick="getWeather()"><i class="fas fa-search"></i> Search</button>
+                <select id="unitSelect" class="unit-toggle" onchange="changeUnit()">
+                    <option value="metric">°C</option>
+                    <option value="imperial">°F</option>
+                </select>
+                <button onclick="locateMe()"><i class="fas fa-location-arrow"></i> Locate Me</button>
+            </div>
+        </header>
 
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p>Loading weather data...</p>
+        </div>
+
+        <div id="error" class="error hidden"></div>
+
+        <div class="weather-display">
+            <div class="current-weather">
+                <h2>Current Weather</h2>
+                <div id="currentWeather" class="hidden">
+                    <div class="weather-main">
+                        <div class="weather-icon" id="currentIcon"></div>
+                        <div>
+                            <h3 id="currentCity"></h3>
+                            <p id="currentTemp" style="font-size: 2rem; font-weight: bold;"></p>
+                            <p id="currentDesc"></p>
+                        </div>
+                    </div>
+                    <div class="weather-details">
+                        <div class="detail-item">
+                            <p><i class="fas fa-temperature-low"></i> Feels Like</p>
+                            <p id="currentFeelsLike"></p>
+                        </div>
+                        <div class="detail-item">
+                            <p><i class="fas fa-tint"></i> Humidity</p>
+                            <p id="currentHumidity"></p>
+                        </div>
+                        <div class="detail-item">
+                            <p><i class="fas fa-wind"></i> Wind Speed</p>
+                            <p id="currentWind"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="forecast-container">
+                <h2>5-Day Forecast</h2>
+                <div id="forecast" class="forecast-days"></div>
+            </div>
+
+            <div class="map-container">
+                <h2>Location Map</h2>
+                <div id="map"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script>
-        async function getWeather() {
+        let map;
+        let currentMarker;
+        let currentUnit = 'metric';
+        
+        // Initialize map
+        function initMap() {
+            map = L.map('map').setView([20, 0], 2);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+            
+            // Add click event to map
+            map.on('click', async function(e) {
+                if (currentMarker) {
+                    map.removeLayer(currentMarker);
+                }
+                currentMarker = L.marker(e.latlng).addTo(map)
+                    .bindPopup("Loading weather...").openPopup();
+                
+                try {
+                    const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${e.latlng.lat}&lon=${e.latlng.lng}`);
+                    const data = await response.json();
+                    const city = data.address.city || data.address.town || data.address.village;
+                    if (city) {
+                        getWeatherByCity(city);
+                    } else {
+                        document.getElementById('error').textContent = "Could not determine city name for this location";
+                        document.getElementById('error').classList.remove('hidden');
+                    }
+                } catch (error) {
+                    console.error("Error fetching location data:", error);
+                    document.getElementById('error').textContent = "Error fetching location data";
+                    document.getElementById('error').classList.remove('hidden');
+                }
+            });
+        }
+        
+        // Initialize map when page loads
+        window.onload = initMap;
+        
+        // Change temperature unit
+        function changeUnit() {
+            currentUnit = document.getElementById('unitSelect').value;
             const city = document.getElementById('cityInput').value;
-            const response = await fetch(`/weather?city=${city}`);
-            const data = await response.json();
-
-            const resultDiv = document.getElementById('weatherResult');
-            if (data.error) {
-                resultDiv.innerHTML = `<p style="color: red;">❌ ${data.error}</p>`;
-            } else {
-                resultDiv.innerHTML = `
-                    <h2>${data.city}</h2>
-                    <div class="weather-icon">${getWeatherIcon(data.description)}</div>
-                    <p>Temperature: ${data.temperature}°C</p>
-                    <p>Conditions: ${data.description}</p>
-                `;
+            if (city) {
+                getWeatherByCity(city);
             }
         }
-
-        function getWeatherIcon(description) {
+        
+        // Get weather by city name
+        async function getWeather() {
+            const city = document.getElementById('cityInput').value.trim();
+            if (!city) {
+                document.getElementById('error').textContent = "Please enter a city name";
+                document.getElementById('error').classList.remove('hidden');
+                return;
+            }
+            getWeatherByCity(city);
+        }
+        
+        // Main weather fetching function
+        async function getWeatherByCity(city) {
+            try {
+                // Show loading spinner
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('error').classList.add('hidden');
+                
+                // Fetch current weather
+                const weatherResponse = await fetch(`/weather?city=${city}&units=${currentUnit}`);
+                const weatherData = await weatherResponse.json();
+                
+                if (weatherData.error) {
+                    throw new Error(weatherData.error);
+                }
+                
+                // Fetch forecast
+                const forecastResponse = await fetch(`/forecast?city=${city}&units=${currentUnit}`);
+                const forecastData = await forecastResponse.json();
+                
+                if (forecastData.error) {
+                    throw new Error(forecastData.error);
+                }
+                
+                // Update UI
+                updateCurrentWeather(weatherData);
+                updateForecast(forecastData);
+                updateMap(weatherData, forecastData);
+                
+                // Hide loading spinner and show content
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('currentWeather').classList.remove('hidden');
+            } catch (error) {
+                console.error("Error fetching weather data:", error);
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').textContent = error.message;
+                document.getElementById('error').classList.remove('hidden');
+                document.getElementById('currentWeather').classList.add('hidden');
+            }
+        }
+        
+        // Update current weather display
+        function updateCurrentWeather(data) {
+            document.getElementById('currentCity').textContent = `${data.city}${data.country ? ', ' + data.country : ''}`;
+            document.getElementById('currentTemp').textContent = `${Math.round(data.temperature)}°${currentUnit === 'metric' ? 'C' : 'F'}`;
+            document.getElementById('currentDesc').textContent = data.description;
+            document.getElementById('currentFeelsLike').textContent = `${Math.round(data.feels_like)}°${currentUnit === 'metric' ? 'C' : 'F'}`;
+            document.getElementById('currentHumidity').textContent = `${data.humidity}%`;
+            document.getElementById('currentWind').textContent = `${data.wind_speed} ${currentUnit === 'metric' ? 'm/s' : 'mph'}`;
+            
+            // Set weather icon
+            const iconElement = document.getElementById('currentIcon');
+            iconElement.innerHTML = getWeatherIcon(data.icon);
+        }
+        
+        // Update forecast display
+        function updateForecast(data) {
+            const forecastElement = document.getElementById('forecast');
+            forecastElement.innerHTML = '';
+            
+            data.forecasts.forEach(day => {
+                const date = new Date(day.date);
+                const dayElement = document.createElement('div');
+                dayElement.className = 'forecast-day';
+                dayElement.innerHTML = `
+                    <h3>${date.toLocaleDateString('en-US', { weekday: 'short' })}</h3>
+                    <div style="font-size: 2rem;">${getWeatherIcon(day.icon)}</div>
+                    <p>${Math.round(day.temp)}°${currentUnit === 'metric' ? 'C' : 'F'}</p>
+                    <p>${day.description}</p>
+                    <p><small>Humidity: ${day.humidity}%</small></p>
+                    <p><small>Wind: ${day.wind_speed} ${currentUnit === 'metric' ? 'm/s' : 'mph'}</small></p>
+                `;
+                forecastElement.appendChild(dayElement);
+            });
+        }
+        
+        // Update map with current location
+        function updateMap(weatherData, forecastData) {
+            // For simplicity, we'll just show the first forecast location
+            // In a real app, you'd get the coordinates from the weather API response
+            if (currentMarker) {
+                map.removeLayer(currentMarker);
+            }
+            
+            // Center map on the city (using first forecast location as approximation)
+            map.setView([forecastData.city.coord.lat, forecastData.city.coord.lon], 10);
+            
+            currentMarker = L.marker([forecastData.city.coord.lat, forecastData.city.coord.lon]).addTo(map)
+                .bindPopup(`<b>${weatherData.city}</b><br>${weatherData.temperature}°${currentUnit === 'metric' ? 'C' : 'F'}<br>${weatherData.description}`)
+                .openPopup();
+        }
+        
+        // Get weather icon based on OpenWeatherMap icon code
+        function getWeatherIcon(iconCode) {
             const icons = {
-                'clear': '☀️',
-                'cloud': '☁️',
-                'rain': '🌧️',
-                'thunderstorm': '⛈️',
-                'snow': '❄️',
-                'mist': '🌫️'
+                '01d': '☀️', '01n': '🌙',
+                '02d': '⛅', '02n': '⛅',
+                '03d': '☁️', '03n': '☁️',
+                '04d': '☁️', '04n': '☁️',
+                '09d': '🌧️', '09n': '🌧️',
+                '10d': '🌦️', '10n': '🌦️',
+                '11d': '⛈️', '11n': '⛈️',
+                '13d': '❄️', '13n': '❄️',
+                '50d': '🌫️', '50n': '🌫️'
             };
-            description = description.toLowerCase();
-            return icons[description] || '🌤️';
+            return icons[iconCode] || '🌤️';
+        }
+        
+        // Get user's current location
+        function locateMe() {
+            if (navigator.geolocation) {
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('error').classList.add('hidden');
+                
+                navigator.geolocation.getCurrentPosition(
+                    async (position) => {
+                        try {
+                            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.coords.latitude}&lon=${position.coords.longitude}`);
+                            const data = await response.json();
+                            const city = data.address.city || data.address.town || data.address.village;
+                            if (city) {
+                                document.getElementById('cityInput').value = city;
+                                getWeatherByCity(city);
+                            } else {
+                                throw new Error("Could not determine city name for your location");
+                            }
+                        } catch (error) {
+                            console.error("Error fetching location data:", error);
+                            document.getElementById('loading').style.display = 'none';
+                            document.getElementById('error').textContent = "Error fetching location data";
+                            document.getElementById('error').classList.remove('hidden');
+                        }
+                    },
+                    (error) => {
+                        console.error("Geolocation error:", error);
+                        document.getElementById('loading').style.display = 'none';
+                        document.getElementById('error').textContent = "Could not get your location. Please enable location services.";
+                        document.getElementById('error').classList.remove('hidden');
+                    }
+                );
+            } else {
+                document.getElementById('error').textContent = "Geolocation is not supported by your browser";
+                document.getElementById('error').classList.remove('hidden');
+            }
         }
     </script>
 </body>
