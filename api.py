@@ -4,6 +4,10 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 app = FastAPI()
+API_KEY = "58a80029124e2e01724f48e80c7be2c0"
+BASE_URL = "https://api.openweathermap.org/data/2.5/weather"
+
+app = FastAPI()
 templates = Jinja2Templates(directory="templates")
 
 # Your existing weather endpoint
