@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 import requests
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -28,5 +28,5 @@ async def weather(city: str):
 
 # New route to serve the HTML page
 @app.get("/", response_class=HTMLResponse)
-async def read_root(request: requests):
+async def read_root(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
